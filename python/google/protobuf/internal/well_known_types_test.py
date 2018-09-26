@@ -749,6 +749,38 @@ class FieldMaskTest(unittest.TestCase):
         well_known_types._CamelCaseToSnakeCase,
         'foo_bar')
 
+  def testTotalOrdering(self):
+    a, b = field_mask_pb2.FieldMask(), field_mask_pb2.FieldMask()
+    a.FromJsonString("a.b,x.y")
+    b.FromJsonString("x.y,a.b")
+    self.assertEqual(a, a)
+    self.assertNotEqual(a, b)
+
+    for a_json, b_json in (("a.b", "a"), ("a.b,x", "a,x"), ("", "a")):
+        # TODO: use total_ordering_test from other PR
+        a.FromJsonString(a_json)
+        b.FromJsonString(b_json)
+
+        self.assertTrue(a == a)
+        self.assertTrue(not a == b)
+
+        self.assertTrue(a != b)
+        self.assertTrue(not a != a)
+
+        self.assertTrue(b > a)
+        self.assertTrue(not a > a)
+
+        self.assertTrue(b >= a)
+        self.assertTrue(a >= a)
+        self.assertTrue(not a >= b)
+
+        self.assertTrue(a < b)
+        self.assertTrue(not b < a)
+
+        self.assertTrue(a <= b)
+        self.assertTrue(a <= a)
+        self.assertTrue(not b <= a)
+
 
 class StructTest(unittest.TestCase):
 

@@ -490,6 +490,24 @@ class FieldMask(object):
     tree.MergeMessage(
         source, destination, replace_message_field, replace_repeated_field)
 
+  def __eq__(self, other):
+    return _FieldMaskTree(self) == _FieldMaskTree(other)
+
+  def __ne__(self, other):
+    return _FieldMaskTree(self) != _FieldMaskTree(other)
+
+  def __lt__(self, other):
+    return _FieldMaskTree(self) < _FieldMaskTree(other)
+
+  def __le__(self, other):
+    return _FieldMaskTree(self) <= _FieldMaskTree(other)
+
+  def __gt__(self, other):
+    return _FieldMaskTree(self) > _FieldMaskTree(other)
+
+  def __ge__(self, other):
+    return _FieldMaskTree(self) >= _FieldMaskTree(other)
+
 
 def _IsValidPath(message_descriptor, path):
   """Checks whether the path is valid for Message Descriptor."""
@@ -645,6 +663,98 @@ class _FieldMaskTree(object):
     """Merge all fields specified by this tree from source to destination."""
     _MergeMessage(
         self._root, source, destination, replace_message, replace_repeated)
+
+  def __eq__(self, other):
+    def bfs_eq(a, b):
+      if not (a or b):
+        return True
+      a_keys = sorted(a.keys())
+      if a_keys != sorted(b.keys()):
+        return False
+      return all(bfs_eq(a[k], b[k]) for k in a_keys)
+    return bfs_eq(self._root, other._root)
+
+  def __ne__(self, other):
+    def bfs_ne(a, b):
+      if not (a or b):
+        return False
+      a_keys = sorted(a.keys())
+      if a_keys != sorted(b.keys()):
+        return True
+      return any(bfs_ne(a[k], b[k]) for k in a_keys)
+    return bfs_ne(self._root, other._root)
+
+  def __lt__(self, other):
+    def bfs_lt(a, b):
+      set_a = set(a.keys())
+      set_b = set(b.keys())
+      if set_a == set_b:
+        return None
+      elif set_a < set_b:
+        return True
+      else:
+        for k in sorted(set_a):
+          r = bfs_lt(a[k], b[k])
+          if r is True:
+            return True
+          elif r is False:
+            return False
+      return None
+    return bool(bfs_lt(self._root, other._root))
+
+  def __le__(self, other):
+    def bfs_le(a, b):
+      set_a = set(a.keys())
+      set_b = set(b.keys())
+      if set_a == set_b:
+        return None
+      elif set_a < set_b:
+        return True
+      else:
+        for k in sorted(set_a):
+          r = bfs_le(a[k], b[k])
+          if r is True:
+            return True
+          elif r is False:
+            return False
+      return None
+    return bfs_le(self._root, other._root) in (True, None)
+
+  def __gt__(self, other):
+    def bfs_gt(a, b):
+      set_a = set(a.keys())
+      set_b = set(b.keys())
+      if set_a == set_b:
+        return None
+      elif set_a > set_b:
+        return True
+      else:
+        for k in sorted(set_a):
+          r = bfs_gt(a[k], b[k])
+          if r is True:
+            return True
+          elif r is False:
+            return False
+      return None
+    return bool(bfs_gt(self._root, other._root))
+
+  def __ge__(self, other):
+    def bfs_ge(a, b):
+      set_a = set(a.keys())
+      set_b = set(b.keys())
+      if set_a == set_b:
+        return None
+      elif set_a > set_b:
+        return True
+      else:
+        for k in sorted(set_a):
+          r = bfs_ge(a[k], b[k])
+          if r is True:
+            return True
+          elif r is False:
+            return False
+      return None
+    return bfs_ge(self._root, other._root) in (True, None)
 
 
 def _StrConvert(value):
